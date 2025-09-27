@@ -64,7 +64,7 @@ const SignUpForm = () => {
   };
 
   return (
-    <main className="w-full min-h-dvh flex flex-col items-center justify-center">
+    <main className="w-full min-h-dvh flex flex-col items-center justify-center px-3">
       <div className="w-full max-w-md space-y-5 px-6 py-5 rounded-md bg-white lg:bg-transparent text-gray-900 lg:text-accent lg:border shadow-lg">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(submitForm)} className="space-y-5">

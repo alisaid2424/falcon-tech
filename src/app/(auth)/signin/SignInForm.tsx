@@ -70,7 +70,7 @@ const SignInForm = () => {
   };
 
   return (
-    <main className="w-full min-h-dvh flex flex-col items-center justify-center">
+    <main className="w-full min-h-dvh flex flex-col items-center justify-center px-3">
       <div className="w-full max-w-md space-y-5 px-6 py-5 rounded-md bg-white lg:bg-transparent text-gray-900 lg:text-accent lg:border shadow-lg">
         <div className="text-center pb-8 mx-auto">
           <h3 className="text-accent lg:text-foreground text-2xl font-bold sm:text-3xl">
