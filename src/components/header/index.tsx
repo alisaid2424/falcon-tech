@@ -14,8 +14,8 @@ const Header = async () => {
 
   return (
     <WithoutNavAndFooter>
-      <header className="bg-inherit shadow-sm py-2 sticky top-0 z-40 max-w-7xl mx-auto">
-        <div className="container flex items-center justify-between h-16 gap-6 lg:gap-10">
+      <header className="bg-inherit shadow-sm py-2 sticky top-0 z-40">
+        <div className="container flex items-center justify-between h-16 gap-6 lg:gap-10 max-w-7xl mx-auto">
           <Link href={Routes.ROOT}>
             <Image
               src="/logo.svg"
