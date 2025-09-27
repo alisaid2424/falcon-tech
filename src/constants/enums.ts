@@ -26,7 +26,7 @@ export const USERS_PER_PAGE = 3;
 export const PRODUCTS_PER_PAGE = 3;
 export const ORDERS_PER_PAGE = 3;
 
-const PRODUCTION_DOMAIN = "http://localhost:3000";
+const PRODUCTION_DOMAIN = "https://falcon-tech-mu.vercel.app";
 
 const DEVELOPMENT_DOMAIN = "http://localhost:3000";
 
