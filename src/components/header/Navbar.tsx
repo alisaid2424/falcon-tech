@@ -69,7 +69,7 @@ function Navbar({ session }: NavBarProps) {
       <ul
         className={`fixed lg:static ${
           openMenu ? "top-0 z-50" : "-top-full"
-        } left-0 px-10 py-20 lg:p-0 bg-slate-200 lg:bg-transparent transition-all duration-300 h-full lg:h-auto flex-col lg:flex-row w-full lg:w-auto flex items-start lg:items-center gap-10`}
+        } left-0 px-10 py-20 lg:p-0 bg-slate-200 dark:bg-background  lg:bg-transparent transition-all duration-300 h-full lg:h-auto flex-col lg:flex-row w-full lg:w-auto flex items-start lg:items-center gap-5 lg:gap-10 border-b-[2px] border-accent lg:border-b-0 lg:transition-none `}
       >
         <Button
           variant="secondary"
@@ -80,11 +80,14 @@ function Navbar({ session }: NavBarProps) {
           <XIcon className="!w-6 !h-6" />
         </Button>
         {links.map((link) => (
-          <li key={link.id}>
+          <li
+            key={link.id}
+            className="border-b-2 border-accent/30 pb-5 lg:pb-0 lg:border-b-0 w-full"
+          >
             <Link
               onClick={() => setOpenMenu(false)}
               href={link.href}
-              className={`hover:text-primary duration-200 transition-colors font-semibold ${
+              className={`hover:text-primary font-semibold hover:ps-2 lg:hover:ps-0 transition-all duration-300 ${
                 isActive(link.href) ? "text-primary" : "text-accent"
               }`}
             >
