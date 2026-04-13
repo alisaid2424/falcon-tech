@@ -1,6 +1,8 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { confirmDelete } from "@/lib/swal";
 import { deleteOrder } from "@/server/actions/order";
 import { Trash2 } from "lucide-react";
 
@@ -14,52 +16,44 @@ const DeleteOrderButton = ({ orderId, onSuccess }: DeleteOrderButtonProps) => {
 
   const handleDelete = async () => {
     try {
-      if (confirm("Are you sure you want to delete this Order?")) {
-        const res = await deleteOrder(orderId);
+      const confirmed = await confirmDelete(
+        "Delete Order?",
+        "Are you sure you want to delete this order?",
+      );
 
-        if (res.status && res.message) {
-          if (res.status === 200) {
-            toast({
-              title: "Success! 🎉",
-              description: res.message,
-              className: "bg-green-600 text-white",
-            });
+      if (!confirmed) return;
 
-            if (onSuccess) {
-              onSuccess();
-            }
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: res.message,
-            });
-          }
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Unexpected response from server.",
-          });
-        }
+      const res = await deleteOrder(orderId);
+
+      if (res.success) {
+        toast({
+          title: "Success! 🎉",
+          description: res.message,
+          className: "bg-green-600 text-white",
+        });
+
+        onSuccess?.();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: res.message,
+        });
       }
     } catch (error) {
-      console.error(error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "An error occurred while deleting the order.",
+        description:
+          error instanceof Error ? error.message : "Unknown error occurred",
       });
     }
   };
 
   return (
-    <div
-      onClick={handleDelete}
-      className="bg-red-600 text-white p-2 hover:bg-red-800 transition-all duration-300 rounded-lg inline-block cursor-pointer"
-    >
+    <Button onClick={handleDelete} variant="destructive" size="icon">
       <Trash2 size={20} />
-    </div>
+    </Button>
   );
 };
 

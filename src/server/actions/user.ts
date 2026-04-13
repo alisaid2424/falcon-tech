@@ -16,7 +16,7 @@ import { revalidatePath } from "next/cache";
 // created or updated  user
 export const userAction = async (
   data: CreateUserType | UpdateUserType,
-  mode: "create" | "update"
+  mode: "create" | "update",
 ) => {
   const result =
     mode === "create"
@@ -45,12 +45,12 @@ export const userAction = async (
     typeof formData.image === "string"
       ? formData.image
       : formData.image instanceof File && formData.image.size > 0
-      ? await getImageUrl({
-          imageFile: formData.image,
-          publicId: formData.image.name,
-          pathName: "profile_images",
-        })
-      : undefined;
+        ? await getImageUrl({
+            imageFile: formData.image,
+            publicId: formData.image.name,
+            pathName: "profile_images",
+          })
+        : undefined;
 
   try {
     if (mode === "create") {
@@ -69,7 +69,7 @@ export const userAction = async (
 
       const hashedPassword = await bcrypt.hash(
         (formData as CreateUserType).password,
-        10
+        10,
       );
 
       const newUser = await prisma.user.create({
@@ -140,7 +140,7 @@ export const userAction = async (
       const targets = error.meta?.target as string[];
 
       const errorObject = Object.fromEntries(
-        targets.map((field) => [field, `${field} is already in use.`])
+        targets.map((field) => [field, `${field} is already in use.`]),
       );
 
       return {
@@ -171,14 +171,13 @@ export const deleteUser = async (id: string) => {
     revalidatePath(Routes.ROOT);
 
     return {
-      status: 200,
+      success: true,
       message: "User deleted successfull",
     };
   } catch (error) {
-    console.error(error);
     return {
-      status: 500,
-      message: "internal server error",
+      success: false,
+      message: error instanceof Error ? error.message : "Internal server error",
     };
   }
 };
