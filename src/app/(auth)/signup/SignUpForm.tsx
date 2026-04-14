@@ -2,7 +2,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useTransition } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { RegisterSchema, TRegisterType } from "@/zod-schemas/auth";
 import { Form } from "@/components/ui/form";
@@ -13,11 +13,12 @@ import Link from "next/link";
 import { Pages } from "@/constants/enums";
 import { SignUpAction } from "@/server/actions/auth";
 import ContinueWithGoogle from "@/components/ContinueWithGoogle";
+import { BackButton } from "@/components/BackButton";
 
 const SignUpForm = () => {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+   const [isPending, startTransition] = useTransition();
 
   // Initialize react-hook-form
   const defaultValues: TRegisterType = {
@@ -33,11 +34,9 @@ const SignUpForm = () => {
     defaultValues,
   });
 
-  const submitForm = async (data: TRegisterType) => {
-    if (isLoading) return;
-    try {
-      setIsLoading(true);
-
+  const submitForm =  (data: TRegisterType) => {
+    startTransition(async()=>{
+      try {
       const res = await SignUpAction(data);
       if (res.status && res.message) {
         if (res.status === 201) {
@@ -56,15 +55,24 @@ const SignUpForm = () => {
           });
         }
       }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setIsLoading(false);
-    }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description:
+            error instanceof Error ? error.message : "Something went wrong",
+        });
+      } 
+    })
   };
 
   return (
-    <main className="w-full min-h-dvh flex flex-col items-center justify-center px-3">
+    <main className="w-full min-h-dvh flex flex-col items-center justify-center px-3 pb-10">
+      <BackButton
+        title="Go Back"
+        variant="default"
+        className="rounded-full max-sm:mb-4 mb-8"
+      />
       <div className="w-full max-w-md space-y-5 px-6 py-5 rounded-md bg-white lg:bg-transparent text-gray-900 lg:text-accent lg:border shadow-lg">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(submitForm)} className="space-y-5">
@@ -94,9 +102,9 @@ const SignUpForm = () => {
               type="submit"
               className="w-full hover:bg-teal-500"
               variant="default"
-              disabled={isLoading}
+              disabled={isPending}
             >
-              {isLoading ? (
+              {isPending ? (
                 <LoaderCircle className="animate-spin" />
               ) : (
                 "Sign Up"

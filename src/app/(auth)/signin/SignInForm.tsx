@@ -2,7 +2,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import {  useTransition } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { Pages, Routes } from "@/constants/enums";
@@ -13,11 +13,12 @@ import { Button } from "@/components/ui/button";
 import { LoaderCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ContinueWithGoogle from "@/components/ContinueWithGoogle";
+import { BackButton } from "@/components/BackButton";
 
 const SignInForm = () => {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   // Initialize react-hook-form
   const defaultValues: TLoginType = {
@@ -31,11 +32,9 @@ const SignInForm = () => {
     defaultValues,
   });
 
-  const submitForm = async (data: TLoginType) => {
-    if (isLoading) return;
+  const submitForm =  (data: TLoginType) => {
+    startTransition(async ()=>{
     try {
-      setIsLoading(true);
-
       const res = await signIn("credentials", {
         email: data.email,
         password: data.password,
@@ -63,14 +62,23 @@ const SignInForm = () => {
         router.refresh();
       }
     } catch (error) {
-      console.log(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      toast({
+          variant: "destructive",
+          title: "Error",
+          description:
+            error instanceof Error ? error.message : "Something went wrong",
+      });
+    } 
+  })
+};
 
   return (
     <main className="w-full min-h-dvh flex flex-col items-center justify-center px-3">
+      <BackButton
+        title="Go Back"
+        variant="default"
+        className="rounded-full mb-10"
+      />
       <div className="w-full max-w-md space-y-5 px-6 py-5 rounded-md bg-white lg:bg-transparent text-gray-900 lg:text-accent lg:border shadow-lg">
         <div className="text-center pb-8 mx-auto">
           <h3 className="text-accent lg:text-foreground text-2xl font-bold sm:text-3xl">
@@ -95,9 +103,9 @@ const SignInForm = () => {
               type="submit"
               className="w-full hover:bg-teal-500"
               variant="default"
-              disabled={isLoading}
+              disabled={isPending}
             >
-              {isLoading ? (
+              {isPending ? (
                 <LoaderCircle className="animate-spin" />
               ) : (
                 "Sign in"

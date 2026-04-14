@@ -11,7 +11,7 @@ import {
 } from "@stripe/react-stripe-js";
 import { LoaderCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useTransition } from "react";
 
 interface CheckoutFormProps {
   amount: number;
@@ -24,16 +24,15 @@ const CheckoutForm = ({ amount }: CheckoutFormProps) => {
   const session = useSession();
   const stripe = useStripe();
   const elements = useElements();
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
 
     if (!stripe || !elements) return;
 
-    try {
-      setLoading(true);
-
+    startTransition(async()=>{
+      try {
       // Validate form
       const { error: submitError } = await elements.submit();
       if (submitError) {
@@ -97,16 +96,14 @@ const CheckoutForm = ({ amount }: CheckoutFormProps) => {
 
         return;
       }
-    } catch (error) {
-      console.error("Unexpected error:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Unexpected error occurred",
-      });
-    } finally {
-      setLoading(false);
-    }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error instanceof Error ? error.message : "Unexpected error occurred",
+        });
+      } 
+    })
   };
 
   const createOrder = async () => {
@@ -213,10 +210,10 @@ const CheckoutForm = ({ amount }: CheckoutFormProps) => {
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={isPending}
         className="w-full mt-5 bg-primary text-white rounded-md py-3 text-lg hover:bg-teal-500 transition-colors"
       >
-        {loading ? <LoaderCircle className="animate-spin mx-auto" /> : "Submit"}
+        {isPending ? <LoaderCircle className="animate-spin mx-auto" /> : "Submit"}
       </button>
     </form>
   );

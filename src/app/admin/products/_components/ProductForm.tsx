@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Product, Category } from "@prisma/client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useTransition } from "react";
 import { z } from "zod";
 import {
   CreateProductSchema,
@@ -30,7 +30,7 @@ interface ProductFormProps {
 const ProductForm = ({ product, categories }: ProductFormProps) => {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const isUpdate = Boolean(product);
 
@@ -64,53 +64,50 @@ const ProductForm = ({ product, categories }: ProductFormProps) => {
     handleSubmit,
   } = form;
 
-  const submitForm = async (data: SchemaType) => {
-    if (isLoading) return;
+  const submitForm = (data: SchemaType) => {
+    startTransition(async () => {
+      try {
+        const res = await productAction(data, isUpdate ? "update" : "create");
 
-    try {
-      setIsLoading(true);
-
-      const res = await productAction(data, isUpdate ? "update" : "create");
-
-      if (res.status === 200 || res.status === 201) {
-        toast({
-          title: "Success! 🎉",
-          description: res.message,
-          className: "bg-green-600 text-white",
-        });
-
-        router.push(`${Pages.PRODUCTS}?pageNumber=1`);
-      } else if (res.status === 400 && res.error) {
-        Object.entries(res.error).forEach(([field, message]) => {
-          setError(field as keyof SchemaType, {
-            type: "server",
-            message,
+        if (res.status === 200 || res.status === 201) {
+          toast({
+            title: "Success! 🎉",
+            description: res.message,
+            className: "bg-green-600 text-white",
           });
-        });
 
-        toast({
-          variant: "destructive",
-          title: "Form Errors",
-          description: "Please fix the highlighted fields.",
-        });
-      } else {
+          router.push(`${Pages.PRODUCTS}?pageNumber=1`);
+        } else if (res.status === 400 && res.error) {
+          Object.entries(res.error).forEach(([field, message]) => {
+            setError(field as keyof SchemaType, {
+              type: "server",
+              message,
+            });
+          });
+
+          toast({
+            variant: "destructive",
+            title: "Form Errors",
+            description: "Please fix the highlighted fields.",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: res.message,
+          });
+        }
+      } catch (error) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: res.message,
+          description:
+            error instanceof Error
+              ? error.message
+              : "Unexpected error occurred",
         });
       }
-    } catch (error) {
-      console.error(error);
-
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Unexpected error occurred",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   return (
@@ -189,9 +186,9 @@ const ProductForm = ({ product, categories }: ProductFormProps) => {
               type="submit"
               variant="default"
               className="hover:bg-teal-500 font-bold"
-              disabled={isLoading}
+              disabled={isPending}
             >
-              {isLoading ? (
+              {isPending ? (
                 <LoaderCircle className="animate-spin" />
               ) : isUpdate ? (
                 "Update Product"

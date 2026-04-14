@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ButtonHTMLAttributes } from "react";
+import { Routes } from "@/constants/enums";
 
 type Props = {
   title: string;
@@ -24,7 +25,7 @@ export function BackButton({ title, variant, className, ...props }: Props) {
     <Button
       variant={variant}
       className={className}
-      onClick={() => router.back()}
+      onClick={() => router.push(Routes.ROOT)}
       title={title}
       {...props}
     >

@@ -15,7 +15,7 @@ const SignUpPage = () => {
             height={580}
           />
 
-          <div className="hidden lg:relative lg:block lg:p-12">
+          <div className="hidden lg:relative lg:block lg:px-12 lg:pb-24">
             <a className="block text-white" href="#">
               <span className="sr-only">Home</span>
               {/* Logo */}

@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Category } from "@prisma/client";
-import { useState } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { CategoryFormType, CategorySchema } from "@/zod-schemas/category";
@@ -23,7 +23,7 @@ interface CategoryFormProps {
 const CategoryForm = ({ category }: CategoryFormProps) => {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const defaultValues: CategoryFormType = {
     id: category?.id ?? undefined,
@@ -44,51 +44,48 @@ const CategoryForm = ({ category }: CategoryFormProps) => {
     handleSubmit,
   } = form;
 
-  const submitForm = async (data: CategoryFormType) => {
-    if (isLoading) return;
-    try {
-      setIsLoading(true);
+  const submitForm = (data: CategoryFormType) => {
+    startTransition(async () => {
+      try {
+        const res = await categoryAction(data);
 
-      const res = await categoryAction(data);
-
-      if (res.status && res.message) {
-        if (res.status === 200 || res.status === 201) {
-          toast({
-            title: "Success! 🎉",
-            description: res.message,
-            className: "bg-green-600 text-white",
-          });
-          router.push(`${Routes.CATEGORIES}?pageNumber=1`);
-        } else if (res.status === 400 && res.error) {
-          Object.entries(res.error).forEach(([field, message]) => {
-            form.setError(field as keyof CategoryFormType, {
-              type: "server",
-              message,
+        if (res.status && res.message) {
+          if (res.status === 200 || res.status === 201) {
+            toast({
+              title: "Success! 🎉",
+              description: res.message,
+              className: "bg-green-600 text-white",
             });
-          });
-          toast({
-            variant: "destructive",
-            title: "Form Errors",
-            description: "Please fix the highlighted fields.",
-          });
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: res.message,
-          });
+            router.push(`${Routes.CATEGORIES}?pageNumber=1`);
+          } else if (res.status === 400 && res.error) {
+            Object.entries(res.error).forEach(([field, message]) => {
+              form.setError(field as keyof CategoryFormType, {
+                type: "server",
+                message,
+              });
+            });
+            toast({
+              variant: "destructive",
+              title: "Form Errors",
+              description: "Please fix the highlighted fields.",
+            });
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: res.message,
+            });
+          }
         }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description:
+            error instanceof Error ? error.message : "Something went wrong",
+        });
       }
-    } catch (error) {
-      console.log(error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Something went wrong",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   return (
@@ -129,9 +126,9 @@ const CategoryForm = ({ category }: CategoryFormProps) => {
               variant="default"
               className="hover:bg-teal-500 font-bold"
               title="Save"
-              disabled={isLoading}
+              disabled={isPending}
             >
-              {isLoading ? (
+              {isPending ? (
                 <LoaderCircle className="animate-spin" />
               ) : (
                 `${category ? "Edit Category" : "Create Category"}`

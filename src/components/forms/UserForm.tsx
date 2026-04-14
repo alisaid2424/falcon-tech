@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { UserRole } from "@prisma/client";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -41,7 +41,7 @@ interface UserFormProps {
 const UserForm = ({ user }: UserFormProps) => {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [isAdmin, setIsAdmin] = useState(user?.role === UserRole.ADMIN);
   const session = useSession();
 
@@ -76,55 +76,56 @@ const UserForm = ({ user }: UserFormProps) => {
     handleSubmit,
   } = form;
 
-  const submitForm = async (data: SchemaType) => {
-    if (isLoading) return;
+  const submitForm = (data: SchemaType) => {
+    startTransition(async () => {
+      try {
+        const res = await userAction(data, isUpdate ? "update" : "create");
 
-    try {
-      setIsLoading(true);
+        if (res.status && res.message) {
+          if (res.status === 200 || res.status === 201) {
+            toast({
+              title: "Success! 🎉",
+              description: res.message,
+              className: "bg-green-600 text-white",
+            });
 
-      const res = await userAction(data, isUpdate ? "update" : "create");
-
-      if (res.status && res.message) {
-        if (res.status === 200 || res.status === 201) {
-          toast({
-            title: "Success! 🎉",
-            description: res.message,
-            className: "bg-green-600 text-white",
-          });
-
-          if (session.data?.user.role === UserRole.ADMIN) {
-            router.push(`${Pages.USERS}?pageNumber=1`);
-          } else {
-            router.push(Routes.PROFILE);
-          }
-        } else if (res.status === 400 && res.error) {
-          Object.entries(res.error).forEach(([field, message]) => {
-            if (field in defaultValues) {
-              setError(field as keyof SchemaType, {
-                type: "server",
-                message,
-              });
+            if (session.data?.user.role === UserRole.ADMIN) {
+              router.push(`${Pages.USERS}?pageNumber=1`);
+            } else {
+              router.push(Routes.PROFILE);
             }
-          });
+          } else if (res.status === 400 && res.error) {
+            Object.entries(res.error).forEach(([field, message]) => {
+              if (field in defaultValues) {
+                setError(field as keyof SchemaType, {
+                  type: "server",
+                  message,
+                });
+              }
+            });
 
-          toast({
-            variant: "destructive",
-            title: "Form Errors",
-            description: "Please fix the highlighted fields.",
-          });
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: res.message,
-          });
+            toast({
+              variant: "destructive",
+              title: "Form Errors",
+              description: "Please fix the highlighted fields.",
+            });
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: res.message,
+            });
+          }
         }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description:
+            error instanceof Error ? error.message : "Something went wrong",
+        });
       }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   return (
@@ -213,9 +214,9 @@ const UserForm = ({ user }: UserFormProps) => {
               variant="default"
               className="hover:bg-teal-500 font-bold"
               title="Save"
-              disabled={isLoading}
+              disabled={isPending}
             >
-              {isLoading ? (
+              {isPending ? (
                 <LoaderCircle className="animate-spin" />
               ) : (
                 `${isUpdate ? "Edit User" : "Create User"}`
